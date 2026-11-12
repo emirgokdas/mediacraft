@@ -1,0 +1,76 @@
+---
+import Base from './Base.astro';
+import AdSlot from '../components/AdSlot.astro';
+import Faq, { type FaqItem } from '../components/Faq.astro';
+import { SITE } from '../config';
+import { TOOLS } from '../data/tools';
+
+interface Props {
+  title: string;        // <title> ve schema adı
+  h1: string;
+  description: string;  // meta description (~150 karakter)
+  lead: string;
+  faq: FaqItem[];
+}
+const { title, h1, description, lead, faq } = Astro.props;
+const url = new URL(Astro.url.pathname, SITE.url).href;
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: title,
+    url,
+    description,
+    applicationCategory: 'MultimediaApplication',
+    operatingSystem: 'Any (runs in the browser)',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faq.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  },
+];
+const related = TOOLS.filter((t) => t.href && t.href !== Astro.url.pathname);
+---
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <h1>{h1}</h1>
+  <p class="lead">{lead}</p>
+  <div class="badge-row">
+    <span class="badge">🔒 No upload</span>
+    <span class="badge">♾️ No limits</span>
+    <span class="badge">💸 100% free</span>
+    <span class="badge">🙅 No sign-up</span>
+  </div>
+
+  <AdSlot slot="top" />
+  <slot name="tool" />
+  <AdSlot slot="inContent" />
+
+  <article class="prose">
+    <slot />
+  </article>
+
+  <Faq items={faq} />
+  <AdSlot slot="bottom" />
+
+  {related.length > 0 && (
+    <section>
+      <h2>Related tools</h2>
+      <div class="grid">
+        {related.map((t) => (
+          <a class="card tool-card" href={t.href}>
+            <div class="icon">{t.icon}</div>
+            <h3>{t.title}</h3>
+            <p>{t.description}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+</Base>

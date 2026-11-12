@@ -1,0 +1,64 @@
+---
+import ToolPage from '../../layouts/ToolPage.astro';
+import Transcriber from '../../components/Transcriber.astro';
+
+const faq = [
+  {
+    q: 'Is this audio to text converter really free?',
+    a: 'Yes. There are no credits, no minute limits and no sign-up. The transcription runs on your own device, so it costs us nothing to process your file, and we keep the tool free with a few ads on the page.',
+  },
+  {
+    q: 'Are my audio files uploaded to a server?',
+    a: 'No. Your file is decoded and transcribed inside your browser. Only the AI model itself is downloaded (once) from a public model hub; your audio never leaves your computer. You can even disconnect from the internet after the model has loaded.',
+  },
+  {
+    q: 'Which languages are supported?',
+    a: 'Whisper understands around 100 languages, including English, Spanish, French, German, Portuguese, Turkish, Arabic, Hindi, Japanese and Chinese. Leave the language on Auto-detect or pick it yourself for slightly better accuracy.',
+  },
+  {
+    q: 'How long can my recording be?',
+    a: 'There is no artificial limit. Hour-long recordings work fine on most laptops. Very long files mainly need more memory and time, so on phones or older computers start with the Tiny or Base model.',
+  },
+  {
+    q: 'Why is it slow on my computer?',
+    a: 'Speed depends on your hardware. Chrome and Edge on desktop can use your graphics card (WebGPU), which is many times faster than the CPU fallback. If GPU acceleration is not available, the Tiny model is the quickest option.',
+  },
+  {
+    q: 'Which file formats can I use?',
+    a: 'Anything your browser can play: MP3, WAV, M4A, AAC, OGG, OPUS, FLAC, as well as the audio track of MP4, MOV and WebM videos. If a file fails, convert it to MP3 or WAV and try again.',
+  },
+];
+---
+<ToolPage
+  title="Audio to Text Converter – Free, Private, No Upload"
+  h1="Free Audio to Text Converter"
+  description="Transcribe MP3, WAV, M4A and video files to text with Whisper AI. Free, unlimited and private: everything runs in your browser, nothing is uploaded."
+  lead="Turn interviews, lectures, voice memos and podcasts into text with OpenAI's Whisper model, running entirely in your browser. No account, no limits, and your audio never leaves your device."
+  faq={faq}
+>
+  <Transcriber slot="tool" defaultFormat="txt" />
+
+  <h2>How to convert audio to text</h2>
+  <ol>
+    <li><strong>Choose your file.</strong> Drag an audio or video file into the box above, or click to browse.</li>
+    <li><strong>Pick a model.</strong> Base is a good default. Small and Large v3 Turbo are more accurate but take longer to download and run.</li>
+    <li><strong>Start the transcription.</strong> The first run downloads the model; after that it is cached in your browser and starts instantly.</li>
+    <li><strong>Copy or download.</strong> Get plain text, or switch to SRT/VTT if you need subtitles with timestamps.</li>
+  </ol>
+
+  <h2>Why transcribe in the browser?</h2>
+  <p>
+    Most online transcription services upload your recording to their servers, charge per minute, or cap the free tier at
+    a few minutes. This tool works differently: the Whisper speech recognition model is downloaded to your browser and
+    runs locally using WebGPU or WebAssembly. That means confidential meetings, medical dictations or personal voice notes
+    stay on your machine, and you can transcribe as much as you like.
+  </p>
+
+  <h2>Tips for better accuracy</h2>
+  <ul>
+    <li>Select the spoken language instead of Auto-detect when you know it.</li>
+    <li>Use the Small or Large v3 Turbo model for accents, technical vocabulary or noisy recordings.</li>
+    <li>Recordings with one speaker close to the microphone give the cleanest results.</li>
+    <li>Need the text in English? Set Task to “Translate to English” and Whisper will translate while it transcribes.</li>
+  </ul>
+</ToolPage>

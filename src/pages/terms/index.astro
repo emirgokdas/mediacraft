@@ -1,0 +1,32 @@
+---
+import Base from '../../layouts/Base.astro';
+import { SITE } from '../../config';
+---
+<Base title="Terms of Use" description={`Terms of use for ${SITE.name}.`}>
+  <article class="prose">
+    <h1>Terms of Use</h1>
+    <p>By using {SITE.name} you agree to these terms.</p>
+    <h2>Use of the tools</h2>
+    <p>
+      The tools are provided free of charge, "as is", without warranty of any kind. Automatically generated results
+      such as transcripts and subtitles may contain errors; please review them before relying on them.
+    </p>
+    <h2>Your content</h2>
+    <p>
+      You are responsible for the files you process and must have the right to use them. Because processing happens on
+      your device, we do not receive or claim any rights to your content.
+    </p>
+    <h2>Third-party models</h2>
+    <p>
+      Some tools use open-source AI models distributed under their own licenses (for example, OpenAI Whisper under the
+      MIT license).
+    </p>
+    <h2>Limitation of liability</h2>
+    <p>
+      To the maximum extent permitted by law, {SITE.name} is not liable for any damages arising from the use or
+      inability to use the tools.
+    </p>
+    <h2>Contact</h2>
+    <p><a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a></p>
+  </article>
+</Base>

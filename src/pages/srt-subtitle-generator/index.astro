@@ -1,0 +1,62 @@
+---
+import ToolPage from '../../layouts/ToolPage.astro';
+import Transcriber from '../../components/Transcriber.astro';
+
+const faq = [
+  {
+    q: 'What is an SRT file?',
+    a: 'SRT (SubRip Subtitle) is the most widely supported subtitle format. It is a plain text file with numbered captions, each with a start and end time. YouTube, Vimeo, Premiere Pro, DaVinci Resolve, CapCut and VLC all accept it.',
+  },
+  {
+    q: 'What is the difference between SRT and VTT?',
+    a: 'They are nearly identical. VTT (WebVTT) is the format used by HTML5 video players on the web, while SRT is preferred by video editors and most upload platforms. This tool generates both from the same transcription.',
+  },
+  {
+    q: 'Can I generate English subtitles for a video in another language?',
+    a: 'Yes. Set Task to “Translate to English”. Whisper will listen to the original language and produce English subtitles with timestamps.',
+  },
+  {
+    q: 'Is my video uploaded anywhere?',
+    a: 'No. The audio track is extracted and processed by your browser. Your video stays on your device the whole time.',
+  },
+  {
+    q: 'How do I add the SRT file to YouTube?',
+    a: 'In YouTube Studio open your video, go to Subtitles, choose the language, click “Upload file”, select “With timing” and pick the .srt file you downloaded here.',
+  },
+  {
+    q: 'Can I edit the subtitles before downloading?',
+    a: 'The text box shows the exact file contents, so you can copy it into any text editor, fix names or words, and save it with the .srt extension. Most video editors also let you edit captions after importing.',
+  },
+];
+---
+<ToolPage
+  title="SRT Subtitle Generator – Auto Subtitles for Any Video, Free"
+  h1="Free SRT Subtitle Generator"
+  description="Generate SRT and VTT subtitles automatically from any video or audio file with Whisper AI. Free, no watermark, no upload: runs in your browser."
+  lead="Create accurate, timestamped subtitles for YouTube, TikTok, Reels or your video editor. Drop in a video, get an .srt file. No watermark, no sign-up, and your video never leaves your computer."
+  faq={faq}
+>
+  <Transcriber slot="tool" defaultFormat="srt" />
+
+  <h2>How to make subtitles automatically</h2>
+  <ol>
+    <li><strong>Add your video.</strong> MP4, MOV, WebM and most audio formats work.</li>
+    <li><strong>Choose the language.</strong> Pick the spoken language, or choose “Translate to English” for English subtitles.</li>
+    <li><strong>Generate.</strong> The tool listens to the audio and splits it into timed caption segments.</li>
+    <li><strong>Download SRT or VTT.</strong> Upload it to YouTube or import it into Premiere Pro, DaVinci Resolve, Final Cut or CapCut.</li>
+  </ol>
+
+  <h2>Why add subtitles to your videos?</h2>
+  <p>
+    A large share of social video is watched with the sound off, so captions keep viewers watching. Subtitles also make
+    your content accessible to deaf and hard-of-hearing viewers, help non-native speakers follow along, and give search
+    engines text they can index, which can help your videos get discovered.
+  </p>
+
+  <h2>Getting the best subtitle timing</h2>
+  <ul>
+    <li>Larger models (Small, Large v3 Turbo) produce cleaner sentence boundaries.</li>
+    <li>Background music can confuse speech recognition. If you have a separate voice track, use that.</li>
+    <li>Proofread names and brand terms: speech recognition sometimes spells them phonetically.</li>
+  </ul>
+</ToolPage>

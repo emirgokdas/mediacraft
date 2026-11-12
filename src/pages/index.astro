@@ -1,0 +1,56 @@
+---
+import Base from '../layouts/Base.astro';
+import AdSlot from '../components/AdSlot.astro';
+import { SITE } from '../config';
+import { TOOLS } from '../data/tools';
+
+const jsonLd = [{
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: SITE.name,
+  url: SITE.url,
+}];
+---
+<Base title="Free Private Online Tools" description={SITE.tagline + ' Transcribe audio, create subtitles and more. No sign-up.'} jsonLd={jsonLd}>
+  <h1>Free tools that never upload your files</h1>
+  <p class="lead">
+    Every tool on {SITE.name} runs entirely in your browser using modern web technology (WebGPU and WebAssembly).
+    Your audio, video and photos stay on your device: no uploads, no accounts, no limits.
+  </p>
+
+  <section id="tools">
+    <div class="grid">
+      {TOOLS.map((t) => t.href ? (
+        <a class="card tool-card" href={t.href}>
+          <div class="icon">{t.icon}</div>
+          <h3>{t.title}</h3>
+          <p>{t.description}</p>
+        </a>
+      ) : (
+        <div class="card tool-card disabled">
+          <div class="icon">{t.icon}</div>
+          <h3>{t.title}</h3>
+          <p>{t.description}</p>
+          <span class="soon">Coming soon</span>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <AdSlot slot="inContent" />
+
+  <section class="prose">
+    <h2>Why "on-device" matters</h2>
+    <p>
+      Typical online converters upload your files to a remote server, process them there and send the result back. That
+      is slow for large files, often limited by credits or file size, and means a stranger's server holds a copy of your
+      data. Our tools ship the processing code to your browser instead. The files you open are read locally and the
+      result is created on your own computer.
+    </p>
+    <h2>How is it free?</h2>
+    <p>
+      Because the heavy work happens on your device, running these tools costs us very little. We cover hosting with
+      a small number of ads, and we never sell or even see the files you process.
+    </p>
+  </section>
+</Base>

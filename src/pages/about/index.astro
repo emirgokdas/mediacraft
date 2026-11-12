@@ -1,0 +1,23 @@
+---
+import Base from '../../layouts/Base.astro';
+import { SITE } from '../../config';
+---
+<Base title="About" description={`About ${SITE.name}: free, private tools that run in your browser.`}>
+  <article class="prose">
+    <h1>About {SITE.name}</h1>
+    <p>
+      {SITE.name} is a collection of free tools for everyday media tasks: transcribing audio, generating subtitles,
+      and more on the way. Every tool is built on one principle: <strong>your files should never have to leave your
+      device</strong>.
+    </p>
+    <p>
+      Modern browsers can run AI models and media processing locally using WebGPU and WebAssembly. We use that to build
+      tools that are as capable as paid cloud services, without uploads, accounts or usage limits.
+    </p>
+    <p>
+      The site is built and maintained by an IT specialist with a background in enterprise infrastructure and
+      information security (ISO 27001). Privacy-by-design is not a marketing line here; it is how the tools are built.
+    </p>
+    <p>Have a suggestion for a new tool? <a href="/contact/">Get in touch</a>.</p>
+  </article>
+</Base>

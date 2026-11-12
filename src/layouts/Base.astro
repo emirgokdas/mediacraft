@@ -1,0 +1,68 @@
+---
+import '../styles/global.css';
+import { SITE } from '../config';
+
+interface Props {
+  title: string;
+  description: string;
+  jsonLd?: object[];
+  noindex?: boolean;
+}
+const { title, description, jsonLd = [], noindex = false } = Astro.props;
+const canonical = new URL(Astro.url.pathname, SITE.url).href;
+const fullTitle = Astro.url.pathname === '/' ? `${SITE.name} – ${title}` : `${title} | ${SITE.name}`;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta name="twitter:card" content="summary" />
+    {jsonLd.map((data) => <script type="application/ld+json" set:html={JSON.stringify(data)} />)}
+    {SITE.adsenseClient && (
+      <script
+        async
+        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${SITE.adsenseClient}`}
+        crossorigin="anonymous"
+      ></script>
+    )}
+  </head>
+  <body>
+    <header class="site">
+      <div class="container">
+        <a class="logo" href="/">⚡ {SITE.name}</a>
+        <nav>
+          <a href="/#tools">Tools</a>
+          <a href="/about/">About</a>
+        </nav>
+      </div>
+    </header>
+    <main>
+      <div class="container">
+        <slot />
+      </div>
+    </main>
+    <footer class="site">
+      <div class="container">
+        <div>
+          <a href="/about/">About</a>
+          <a href="/privacy/">Privacy Policy</a>
+          <a href="/terms/">Terms</a>
+          <a href="/contact/">Contact</a>
+        </div>
+        <div>© {new Date().getFullYear()} {SITE.name}</div>
+      </div>
+    </footer>
+  </body>
+</html>

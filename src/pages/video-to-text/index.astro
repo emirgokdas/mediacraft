@@ -1,0 +1,52 @@
+---
+import ToolPage from '../../layouts/ToolPage.astro';
+import Transcriber from '../../components/Transcriber.astro';
+
+const faq = [
+  {
+    q: 'Can I convert an MP4 video to text?',
+    a: 'Yes. Drop the MP4 into the tool; your browser extracts the audio track and Whisper transcribes it. MOV, WebM and MKV files with common audio codecs work too.',
+  },
+  {
+    q: 'Can I transcribe a YouTube video with this?',
+    a: 'This tool works with files on your device. If you own the video or have permission to use it, download the file first and then drop it here.',
+  },
+  {
+    q: 'Do large video files work?',
+    a: 'Yes, but your browser has to load the whole file into memory to extract the audio. For multi-gigabyte videos, exporting just the audio (for example as MP3) first is faster and uses less memory.',
+  },
+  {
+    q: 'Is the transcript accurate enough for meeting notes?',
+    a: 'Whisper is one of the most accurate open speech recognition models available. For meetings with several speakers, use the Small or Large v3 Turbo model. Speaker names are not detected automatically.',
+  },
+  {
+    q: 'Do you store my videos?',
+    a: 'No. We never receive your video. All processing happens locally in your browser, and closing the tab removes everything from memory.',
+  },
+];
+---
+<ToolPage
+  title="Video to Text – Transcribe MP4, MOV & WebM Free"
+  h1="Video to Text Converter"
+  description="Convert video to text online for free. Transcribe MP4, MOV and WebM recordings with Whisper AI directly in your browser. No upload, no limits."
+  lead="Get a written transcript of Zoom recordings, lectures, webinars or vlogs. Your video is processed locally by Whisper AI, so it stays private, and there is no length limit."
+  faq={faq}
+>
+  <Transcriber slot="tool" defaultFormat="txt" accept="video/*,audio/*" />
+
+  <h2>How to transcribe a video</h2>
+  <ol>
+    <li><strong>Select the video file</strong> from your computer or phone.</li>
+    <li><strong>Pick a model and language.</strong> Base works well for clear speech; choose Small or Turbo for harder audio.</li>
+    <li><strong>Click start</strong> and watch the transcript appear as it is processed.</li>
+    <li><strong>Copy the text</strong> or download it as TXT, SRT or VTT.</li>
+  </ol>
+
+  <h2>What people use video transcripts for</h2>
+  <ul>
+    <li><strong>Meeting notes:</strong> turn Zoom, Teams or Meet recordings into searchable text.</li>
+    <li><strong>Studying:</strong> transcribe recorded lectures and skim them instead of rewatching.</li>
+    <li><strong>Content repurposing:</strong> convert a video into a blog post, newsletter or social captions.</li>
+    <li><strong>Research interviews:</strong> transcribe sensitive interviews without sending them to a third party.</li>
+  </ul>
+</ToolPage>

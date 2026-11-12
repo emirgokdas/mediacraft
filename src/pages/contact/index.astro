@@ -1,0 +1,17 @@
+---
+import Base from '../../layouts/Base.astro';
+import { SITE } from '../../config';
+---
+<Base title="Contact" description={`Contact ${SITE.name}.`}>
+  <article class="prose">
+    <h1>Contact</h1>
+    <p>
+      Found a bug, have a feature request, or want to suggest a new tool? Email us at
+      <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>. We read every message.
+    </p>
+    <p>
+      Please don't send us the files you were working on: we don't need them, and keeping your files off our servers is
+      the whole point of this site. A short description of the problem and your browser/device is enough.
+    </p>
+  </article>
+</Base>

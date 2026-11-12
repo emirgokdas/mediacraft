@@ -1,0 +1,307 @@
+---
+interface Props {
+  defaultTask?: 'transcribe' | 'translate';
+  defaultFormat?: 'txt' | 'srt' | 'vtt';
+  accept?: string;
+}
+const { defaultTask = 'transcribe', defaultFormat = 'txt', accept = 'audio/*,video/*' } = Astro.props;
+
+const LANGUAGES: [string, string][] = [
+  ['', 'Auto-detect'], ['english', 'English'], ['spanish', 'Spanish'], ['french', 'French'],
+  ['german', 'German'], ['italian', 'Italian'], ['portuguese', 'Portuguese'], ['dutch', 'Dutch'],
+  ['turkish', 'Turkish'], ['russian', 'Russian'], ['ukrainian', 'Ukrainian'], ['polish', 'Polish'],
+  ['arabic', 'Arabic'], ['hindi', 'Hindi'], ['japanese', 'Japanese'], ['korean', 'Korean'],
+  ['chinese', 'Chinese'], ['indonesian', 'Indonesian'], ['vietnamese', 'Vietnamese'], ['swedish', 'Swedish'],
+  ['greek', 'Greek'], ['czech', 'Czech'], ['romanian', 'Romanian'], ['hebrew', 'Hebrew'],
+];
+---
+<div class="card transcriber" data-default-format={defaultFormat}>
+  <label class="drop" id="tr-drop">
+    <input id="tr-file" type="file" accept={accept} hidden />
+    <div class="drop-icon">📂</div>
+    <div><strong>Drop an audio or video file here</strong> or click to choose</div>
+    <div class="hint">MP3, WAV, M4A, OGG, MP4, MOV, WebM… Processed on your device, never uploaded.</div>
+  </label>
+  <div id="tr-fileinfo" class="fileinfo" hidden></div>
+
+  <div class="options">
+    <label>Model
+      <select id="tr-model">
+        <option value="onnx-community/whisper-tiny">Tiny – fastest (~40 MB)</option>
+        <option value="onnx-community/whisper-base" selected>Base – balanced (~80 MB)</option>
+        <option value="onnx-community/whisper-small">Small – more accurate (~250 MB)</option>
+        <option value="onnx-community/whisper-large-v3-turbo" data-webgpu-f16>Large v3 Turbo – best (~800 MB, GPU only)</option>
+      </select>
+    </label>
+    <label>Language
+      <select id="tr-lang">
+        {LANGUAGES.map(([v, l]) => <option value={v}>{l}</option>)}
+      </select>
+    </label>
+    <label>Task
+      <select id="tr-task">
+        <option value="transcribe" selected={defaultTask === 'transcribe'}>Transcribe (same language)</option>
+        <option value="translate" selected={defaultTask === 'translate'}>Translate to English</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="actions">
+    <button id="tr-start" disabled>Start transcription</button>
+    <span id="tr-device" class="hint"></span>
+  </div>
+
+  <div id="tr-progress-wrap" hidden>
+    <div class="status" id="tr-status"></div>
+    <div class="bar"><div id="tr-bar"></div></div>
+  </div>
+
+  <div id="tr-error" class="error" hidden></div>
+
+  <div id="tr-result" hidden>
+    <div class="result-head">
+      <div class="tabs" role="tablist">
+        <button class="secondary tab" data-fmt="txt">Text</button>
+        <button class="secondary tab" data-fmt="srt">SRT</button>
+        <button class="secondary tab" data-fmt="vtt">VTT</button>
+      </div>
+      <div class="result-actions">
+        <button class="secondary" id="tr-copy">Copy</button>
+        <button id="tr-download">Download</button>
+      </div>
+    </div>
+    <textarea id="tr-output" readonly spellcheck="false"></textarea>
+  </div>
+</div>
+
+<style>
+  .drop { display: block; border: 2px dashed var(--border); border-radius: var(--radius); padding: 32px 16px; text-align: center; cursor: pointer; transition: border-color .15s, background .15s; }
+  .drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+  .drop-icon { font-size: 2rem; }
+  .hint { color: var(--muted); font-size: .88rem; }
+  .fileinfo { margin-top: 12px; font-size: .95rem; }
+  .options { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 20px 0; }
+  .options label { display: flex; flex-direction: column; gap: 4px; font-size: .9rem; font-weight: 600; }
+  .actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .status { margin: 18px 0 6px; font-size: .95rem; }
+  .bar { height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .bar div { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+  .error { margin-top: 16px; color: var(--danger); font-size: .95rem; }
+  .result-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin: 20px 0 8px; }
+  .tabs, .result-actions { display: flex; gap: 6px; }
+  .tab { padding: 6px 14px; }
+  .tabs .tab.active, .tabs .tab.active:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  textarea { width: 100%; min-height: 280px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font: .92rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; resize: vertical; }
+</style>
+
+<script>
+  type Chunk = { timestamp: [number, number | null]; text: string };
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const root = document.querySelector('.transcriber') as HTMLElement;
+  const drop = $('tr-drop');
+  const fileInput = $<HTMLInputElement>('tr-file');
+  const fileInfo = $('tr-fileinfo');
+  const modelSel = $<HTMLSelectElement>('tr-model');
+  const langSel = $<HTMLSelectElement>('tr-lang');
+  const taskSel = $<HTMLSelectElement>('tr-task');
+  const startBtn = $<HTMLButtonElement>('tr-start');
+  const deviceInfo = $('tr-device');
+  const progWrap = $('tr-progress-wrap');
+  const statusEl = $('tr-status');
+  const bar = $('tr-bar');
+  const errorEl = $('tr-error');
+  const resultEl = $('tr-result');
+  const output = $<HTMLTextAreaElement>('tr-output');
+  const copyBtn = $<HTMLButtonElement>('tr-copy');
+  const dlBtn = $<HTMLButtonElement>('tr-download');
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('.tab'));
+
+  let file: File | null = null;
+  let device: 'webgpu' | 'wasm' = 'wasm';
+  let hasF16 = false;
+  let result: { text: string; chunks: Chunk[]; duration: number } | null = null;
+  let fmt = (root.dataset.defaultFormat as 'txt' | 'srt' | 'vtt') || 'txt';
+  let worker: Worker | null = null;
+
+  // --- Donanım tespiti ---
+  (async () => {
+    try {
+      const gpu = (navigator as any).gpu;
+      const adapter = gpu ? await gpu.requestAdapter() : null;
+      if (adapter) {
+        device = 'webgpu';
+        hasF16 = adapter.features.has('shader-f16');
+      }
+    } catch { /* WASM'a düş */ }
+    const turbo = modelSel.querySelector<HTMLOptionElement>('[data-webgpu-f16]')!;
+    if (!(device === 'webgpu' && hasF16)) {
+      turbo.disabled = true;
+      turbo.textContent += ' – not supported on this device';
+    }
+    if (device === 'wasm') modelSel.value = 'onnx-community/whisper-tiny';
+    deviceInfo.textContent = device === 'webgpu'
+      ? '⚡ GPU acceleration available'
+      : 'Running on CPU (slower). For best speed use Chrome or Edge on desktop.';
+  })();
+
+  // --- Dosya seçimi ---
+  function setFile(f: File | undefined | null) {
+    if (!f) return;
+    file = f;
+    fileInfo.hidden = false;
+    fileInfo.textContent = `📄 ${f.name} · ${(f.size / 1024 / 1024).toFixed(1)} MB`;
+    startBtn.disabled = false;
+    errorEl.hidden = true;
+  }
+  fileInput.addEventListener('change', () => setFile(fileInput.files?.[0]));
+  ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', (e) => setFile((e as DragEvent).dataTransfer?.files?.[0]));
+
+  // --- Ses çözme: her şeyi 16 kHz mono Float32'ye çevir ---
+  async function decodeAudio(f: File): Promise<Float32Array> {
+    const buf = await f.arrayBuffer();
+    const ctx = new AudioContext({ sampleRate: 16000 });
+    try {
+      const audio = await ctx.decodeAudioData(buf);
+      if (audio.numberOfChannels === 1) return new Float32Array(audio.getChannelData(0)); // kopya: worker'a transfer edilebilsin
+      const mono = new Float32Array(audio.length);
+      for (let c = 0; c < audio.numberOfChannels; c++) {
+        const data = audio.getChannelData(c);
+        for (let i = 0; i < data.length; i++) mono[i] += data[i] / audio.numberOfChannels;
+      }
+      return mono;
+    } finally {
+      ctx.close();
+    }
+  }
+
+  // --- Format dönüştürücüler ---
+  function ts(sec: number, sep: ',' | '.') {
+    const ms = Math.max(0, Math.round(sec * 1000));
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    const r = ms % 1000;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}${sep}${String(r).padStart(3, '0')}`;
+  }
+  function segments() {
+    if (!result) return [];
+    return result.chunks
+      .filter((c) => c.text.trim())
+      .map((c, i, arr) => {
+        const start = c.timestamp[0] ?? 0;
+        const end = c.timestamp[1] ?? arr[i + 1]?.timestamp[0] ?? result!.duration;
+        return { start, end: Math.max(end, start + 0.5), text: c.text.trim() };
+      });
+  }
+  function render(kind: 'txt' | 'srt' | 'vtt') {
+    if (!result) return '';
+    if (kind === 'txt') return result.text.trim();
+    const segs = segments();
+    if (kind === 'srt') {
+      return segs.map((s, i) => `${i + 1}\n${ts(s.start, ',')} --> ${ts(s.end, ',')}\n${s.text}\n`).join('\n');
+    }
+    return 'WEBVTT\n\n' + segs.map((s) => `${ts(s.start, '.')} --> ${ts(s.end, '.')}\n${s.text}\n`).join('\n');
+  }
+  function showFormat(kind: 'txt' | 'srt' | 'vtt') {
+    fmt = kind;
+    tabs.forEach((t) => t.classList.toggle('active', t.dataset.fmt === kind));
+    output.value = render(kind);
+  }
+  tabs.forEach((t) => t.addEventListener('click', () => showFormat(t.dataset.fmt as any)));
+
+  copyBtn.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(output.value);
+    copyBtn.textContent = 'Copied!';
+    setTimeout(() => (copyBtn.textContent = 'Copy'), 1500);
+  });
+  dlBtn.addEventListener('click', () => {
+    const base = (file?.name ?? 'transcript').replace(/\.[^.]+$/, '');
+    const mime = fmt === 'vtt' ? 'text/vtt' : 'text/plain';
+    const url = URL.createObjectURL(new Blob([output.value], { type: `${mime};charset=utf-8` }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: `${base}.${fmt}` });
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // --- Ana akış ---
+  function setProgress(pct: number, text?: string) {
+    bar.style.width = `${pct}%`;
+    if (text) statusEl.textContent = text;
+  }
+  function fail(msg: string) {
+    errorEl.hidden = false;
+    errorEl.textContent = `Something went wrong: ${msg}`;
+    progWrap.hidden = true;
+    startBtn.disabled = false;
+  }
+
+  startBtn.addEventListener('click', async () => {
+    if (!file) return;
+    startBtn.disabled = true;
+    errorEl.hidden = true;
+    resultEl.hidden = true;
+    progWrap.hidden = false;
+    setProgress(0, 'Reading audio…');
+
+    let audio: Float32Array;
+    try {
+      audio = await decodeAudio(file);
+    } catch {
+      return fail('This file could not be decoded. Try converting it to MP3 or WAV first.');
+    }
+    const duration = audio.length / 16000;
+
+    const model = modelSel.value;
+    const isTurbo = model.includes('large-v3-turbo');
+    const dtype = device === 'webgpu'
+      ? { encoder_model: isTurbo ? 'fp16' : 'fp32', decoder_model_merged: 'q4' }
+      : 'q8';
+
+    worker ??= new Worker(new URL('../scripts/whisper.worker.ts', import.meta.url), { type: 'module' });
+    let live = '';
+    const started = performance.now();
+
+    worker.onmessage = (e) => {
+      const m = e.data;
+      switch (m.type) {
+        case 'status':
+          setProgress(0, m.text);
+          break;
+        case 'load':
+          setProgress(m.progress, `Downloading model… ${Math.round(m.progress)}% (cached for next time)`);
+          break;
+        case 'progress':
+          setProgress(m.progress, `Transcribing… ${Math.round(m.progress)}%`);
+          break;
+        case 'partial':
+          live += m.text;
+          resultEl.hidden = false;
+          output.value = live;
+          output.scrollTop = output.scrollHeight;
+          break;
+        case 'done': {
+          result = { text: m.text, chunks: m.chunks, duration };
+          const secs = ((performance.now() - started) / 1000).toFixed(0);
+          setProgress(100, `✅ Done in ${secs}s · ${duration < 60 ? Math.round(duration) + ' s' : Math.round(duration / 60) + ' min'} of audio`);
+          resultEl.hidden = false;
+          showFormat(fmt);
+          startBtn.disabled = false;
+          startBtn.textContent = 'Transcribe again';
+          break;
+        }
+        case 'error':
+          fail(m.message);
+          break;
+      }
+    };
+    worker.onerror = (e) => fail(e.message || 'Worker crashed (the device may be out of memory). Try a smaller model.');
+
+    worker.postMessage(
+      { type: 'transcribe', audio, duration, model, device, dtype, language: langSel.value || null, task: taskSel.value },
+      [audio.buffer],
+    );
+  });
+</script>
